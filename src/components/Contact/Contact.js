@@ -146,7 +146,7 @@ const Contact = () => {
           <div className="info-card">
             <FaMapMarkerAlt className="icon" />
             <h3>Our Headquarters</h3>
-            <p>123 Rental Plaza<br />San Francisco, CA 94107</p>
+            <p>Cognizant<br />Siruseri, Chennai , CA 94107</p>
             <a 
               href="https://maps.google.com" 
               target="_blank" 
@@ -167,7 +167,7 @@ const Contact = () => {
           <div className="info-card">
             <FaEnvelope className="icon" />
             <h3>Email Us</h3>
-            <p>General: <a href="mailto:hello@homehopper.com">hello@homehopper.com</a></p>
+            <p>General: <a href=":hello@homehopper.com">hello@homehopper.com</a></p>
             <p>Support: <a href="mailto:support@homehopper.com">support@homehopper.com</a></p>
           </div>
 

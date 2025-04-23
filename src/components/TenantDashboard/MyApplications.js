@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Changed import to Link
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import './TenantDashboard.css';
-
 import { FaSpinner, FaExclamationCircle } from 'react-icons/fa';
-
+ 
 function MyApplications() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  // const navigate = useNavigate(); // No longer directly used for this button
-
+ 
   useEffect(() => {
     const fetchApplications = async () => {
       const token = localStorage.getItem('tenantToken');
@@ -25,8 +23,27 @@ function MyApplications() {
             'Authorization': `Bearer ${token}`
           }
         });
-        const data = response.data?.$values || [];
-        setApplications(data);
+        const responseData = response.data;
+        const allApplications = [];
+ 
+        if (responseData?.$values && responseData.$values.length > 0) {
+          responseData.$values.forEach(item => {
+            if (item?.rentalApplicationID) {
+              allApplications.push(item);
+            }
+            if (item?.property?.rentalApplications?.$values) {
+              item.property.rentalApplications.$values.forEach(nestedApp => {
+                if (nestedApp?.rentalApplicationID) {
+                  allApplications.push(nestedApp);
+                }
+                console.log("Nested Application:", nestedApp); // ADD THIS LOG
+              });
+            }
+          });
+        }
+ 
+        setApplications(allApplications);
+        console.log("All Applications:", allApplications); // Log the final array
       } catch (err) {
         console.error('Error fetching applications:', err);
         setError('Failed to load applications.');
@@ -34,10 +51,10 @@ function MyApplications() {
         setLoading(false);
       }
     };
-
+ 
     fetchApplications();
   }, []);
-
+ 
   const getStatusClass = (status) => {
     switch (status?.toLowerCase()) {
       case 'pending':
@@ -52,11 +69,11 @@ function MyApplications() {
         return 'status-unknown';
     }
   };
-
+ 
   return (
     <div className="tenant-applications">
       <h2>My Rental Applications</h2>
-
+ 
       {loading ? (
         <div className="loading">
           <FaSpinner className="spinner" /> Loading applications...
@@ -71,15 +88,15 @@ function MyApplications() {
         applications.map(app => (
           <div key={app.rentalApplicationID} className="application-card">
             <div className="application-info">
-              <h3>{app.property?.propertyName || 'Property'}</h3>
+              <h3>{app?.property?.propertyName} - Property id {app.propertyID}</h3>
               <p><strong>Address:</strong> {app.property?.address || app.permanentAddress}</p>
               <p><strong>Start Date:</strong> {app.tentativeStartDate?.split('T')[0]}</p>
             </div>
-
+ 
             <div className={`application-status ${getStatusClass(app.status)}`}>
               {app.status}
             </div>
-
+ 
             {['accepted', 'approved'].includes(app.status?.toLowerCase()) && (
               <div className="lease-button-container">
                 <Link
@@ -96,5 +113,5 @@ function MyApplications() {
     </div>
   );
 }
-
+ 
 export default MyApplications;

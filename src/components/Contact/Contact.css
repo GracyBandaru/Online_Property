@@ -1,5 +1,5 @@
 .contact {
-    padding: 4rem 2rem;
+    padding: 1rem, 1rem;
     background: #f9f9f9;
     min-height: 100vh;
   }
@@ -21,7 +21,7 @@
   }
   
   .contact-container {
-    max-width: 1200px;
+    max-width: auto;
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -90,7 +90,7 @@
   
   .submit-btn {
     background: #4a6fa5;
-    color: white;
+   
     border: none;
     padding: 1rem 2rem;
     border-radius: 5px;
@@ -101,7 +101,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    width: 100%;
+    width: auto;
   }
   
   .submit-btn:hover {
