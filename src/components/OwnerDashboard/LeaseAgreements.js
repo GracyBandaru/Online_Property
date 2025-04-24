@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './OwnerDashboard.css';
-
+ 
 function LeaseAgreements() {
     const [agreements, setAgreements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate(); // Initialize useNavigate
-
+ 
     useEffect(() => {
         const fetchAgreements = async () => {
             try {
@@ -17,7 +17,7 @@ function LeaseAgreements() {
                 if (!token) {
                     throw new Error('Authentication required');
                 }
-
+ 
                 const response = await axios.get(
                     'http://localhost:5162/api/Owner/lease-agreements',
                     {
@@ -26,12 +26,12 @@ function LeaseAgreements() {
                         }
                     }
                 );
-
+ 
                 console.log('Owner Lease Agreements Response:', response.data); // Keep this for debugging
-
+ 
                 // Access the array of lease agreements correctly
                 setAgreements(response.data?.leaseAgreements?.$values || []);
-
+ 
             } catch (err) {
                 setError(err.response?.data?.message || err.message || 'Failed to fetch lease agreements');
                 setAgreements([]);
@@ -39,17 +39,17 @@ function LeaseAgreements() {
                 setLoading(false);
             }
         };
-
+ 
         fetchAgreements();
     }, []);
-
+ 
     const handleAcceptClick = async (leaseId) => {
         const ownerToken = localStorage.getItem('ownerToken');
         if (!ownerToken) {
             alert('Authentication token not found.');
             return;
         }
-
+ 
         try {
             const statusResponse = await axios.put(
                 `http://localhost:5162/api/LeaseAgreement/${leaseId}/owner/status`,
@@ -61,25 +61,25 @@ function LeaseAgreements() {
                     },
                 }
             );
-
+ 
             console.log('Accept Status Response:', statusResponse.data);
-
+ 
             // Update the local state to reflect the accepted status
             setAgreements(prev =>
                 prev.map(agreement =>
                     agreement.leaseID === leaseId ? { ...agreement, status: 'Accepted' } : agreement
                 )
             );
-
+ 
             // **Remove the navigation here**
             // navigate(`/owner/seal-agreement/${leaseId}`);
-
+ 
         } catch (err) {
             alert(`Failed to accept agreement: ${err.response?.data?.message || err.message}`);
             console.error('Error accepting agreement:', err);
         }
     };
-
+ 
     const handleRejectClick = async (leaseId) => {
         try {
             const token = localStorage.getItem('ownerToken');
@@ -93,7 +93,7 @@ function LeaseAgreements() {
                     }
                 }
             );
-
+ 
             setAgreements(prev =>
                 prev.map(agreement =>
                     agreement.leaseID === leaseId ? { ...agreement, status: 'Rejected' } : agreement
@@ -103,7 +103,7 @@ function LeaseAgreements() {
             alert(`Failed to reject agreement: ${err.response?.data?.message || err.message}`);
         }
     };
-
+ 
     if (loading) {
         return (
             <div className="loading-container">
@@ -112,7 +112,7 @@ function LeaseAgreements() {
             </div>
         );
     }
-
+ 
     if (error) {
         return (
             <div className="error-container">
@@ -123,7 +123,7 @@ function LeaseAgreements() {
             </div>
         );
     }
-
+ 
     if (agreements.length === 0) {
         return (
             <div className="no-agreements">
@@ -132,11 +132,11 @@ function LeaseAgreements() {
             </div>
         );
     }
-
+ 
     return (
         <div className="lease-agreements">
             <h2>Lease Agreements</h2>
-
+ 
             <div className="agreements-list">
                 {agreements.map(agreement => (
                     <div key={agreement.leaseID} className="agreement-card">
@@ -160,38 +160,13 @@ function LeaseAgreements() {
                             )}
                             {/* Add other fields you want to display conditionally here */}
                         </div>
-
-                        {agreement.status?.toLowerCase() === 'pending' && (
-                            <div className="agreement-actions action-buttons">
-                                <button
-                                    className="button accept-btn"
-                                    onClick={() => handleAcceptClick(agreement.leaseID)}
-                                >
-                                    <FaCheck className="icon" /> Accept
-                                </button>
-                                <button
-                                    className="button reject-btn"
-                                    onClick={() => handleRejectClick(agreement.leaseID)}
-                                >
-                                    <FaTimes className="icon" /> Reject
-                                </button>
-                            </div>
-                        )}
-                        {agreement.status?.toLowerCase() === 'accepted' && (
-                            <div className="agreement-actions">
-                                <span className={`status-accepted`}>Accepted</span>
-                            </div>
-                        )}
-                        {agreement.status?.toLowerCase() === 'rejected' && (
-                            <div className="agreement-actions">
-                                <span className={`status-rejected`}>Rejected</span>
-                            </div>
-                        )}
+ 
+                       
                     </div>
                 ))}
             </div>
         </div>
     );
 }
-
+ 
 export default LeaseAgreements;
