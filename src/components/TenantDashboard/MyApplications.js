@@ -1,117 +1,189 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './TenantDashboard.css';
+import './RentalApplicationForm.css'; // Using the same CSS file
 import { FaSpinner, FaExclamationCircle } from 'react-icons/fa';
- 
+
 function MyApplications() {
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
- 
-  useEffect(() => {
-    const fetchApplications = async () => {
-      const token = localStorage.getItem('tenantToken');
-      if (!token) {
-        setError('Unauthorized. Please log in again.');
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await axios.get('http://localhost:5162/api/RentalApplication/tenant', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const responseData = response.data;
-        const allApplications = [];
- 
-        if (responseData?.$values && responseData.$values.length > 0) {
-          responseData.$values.forEach(item => {
-            if (item?.rentalApplicationID) {
-              allApplications.push(item);
+    const [applications, setApplications] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [leaseAgreementsSubmittedForProperty, setLeaseAgreementsSubmittedForProperty] = useState({});
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchApplications = async () => {
+            const token = localStorage.getItem('tenantToken');
+            if (!token) {
+                setError('Unauthorized. Please log in again.');
+                setLoading(false);
+                return;
             }
-            if (item?.property?.rentalApplications?.$values) {
-              item.property.rentalApplications.$values.forEach(nestedApp => {
-                if (nestedApp?.rentalApplicationID) {
-                  allApplications.push(nestedApp);
+            try {
+                const response = await axios.get('http://localhost:5162/api/RentalApplication/tenant', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const responseData = response.data;
+                const allApplications = [];
+
+                if (responseData?.$values && responseData.$values.length > 0) {
+                    for (const item of responseData.$values) {
+                        if (item?.rentalApplicationID) {
+                            allApplications.push(item);
+                            if (['accepted', 'approved'].includes(item.status?.toLowerCase()) && item.propertyID) {
+                                await checkIfLeaseExists(item.propertyID);
+                            }
+                        }
+                        if (item?.property?.rentalApplications?.$values) {
+                            const propertyName = item.property.propertyName;
+                            for (const nestedApp of item.property.rentalApplications.$values) {
+                                if (nestedApp?.rentalApplicationID) {
+                                    allApplications.push({ ...nestedApp, propertyName: propertyName, propertyID: item.propertyID, propertyImageUrl: item.property?.propertyImageUrl, ...nestedApp }); // Assuming propertyImageUrl is here
+                                    if (['accepted', 'approved'].includes(nestedApp.status?.toLowerCase()) && item.propertyID) {
+                                        await checkIfLeaseExists(item.propertyID);
+                                    }
+                                }
+                                console.log("Nested Application:", nestedApp);
+                            }
+                        } else if (item?.property) {
+                            allApplications.push({ ...item, propertyImageUrl: item.property.propertyImageUrl }); // Assuming propertyImageUrl is directly in property
+                        }
+                    }
                 }
-                console.log("Nested Application:", nestedApp); // ADD THIS LOG
-              });
+
+                setApplications(allApplications);
+                console.log("All Applications:", allApplications);
+            } catch (err) {
+                console.error('Error fetching applications:', err);
+                setError('Failed to load applications.');
+            } finally {
+                setLoading(false);
             }
-          });
+        };
+
+        fetchApplications();
+    }, []);
+
+    const checkIfLeaseExists = async (propertyId) => {
+        try {
+            const response = await axios.get(`http://localhost:5162/api/LeaseAgreement/property/${propertyId}/tenant/lease-exists`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('tenantToken')}`
+                }
+            });
+            setLeaseAgreementsSubmittedForProperty(prevState => ({
+                ...prevState,
+                [propertyId]: response.data.exists,
+            }));
+        } catch (error) {
+            console.error('Error checking lease agreement:', error);
         }
- 
-        setApplications(allApplications);
-        console.log("All Applications:", allApplications); // Log the final array
-      } catch (err) {
-        console.error('Error fetching applications:', err);
-        setError('Failed to load applications.');
-      } finally {
-        setLoading(false);
-      }
     };
- 
-    fetchApplications();
-  }, []);
- 
-  const getStatusClass = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'pending':
-        return 'status-pending';
-      case 'approved':
-      case 'accepted':
-        return 'status-approved';
-      case 'rejected':
-      case 'declined':
-        return 'status-rejected';
-      default:
-        return 'status-unknown';
-    }
-  };
- 
-  return (
-    <div className="tenant-applications">
-      <h2>My Rental Applications</h2>
- 
-      {loading ? (
-        <div className="loading">
-          <FaSpinner className="spinner" /> Loading applications...
-        </div>
-      ) : error ? (
-        <div className="error-message">
-          <FaExclamationCircle /> {error}
-        </div>
-      ) : applications.length === 0 ? (
-        <p>No applications submitted yet.</p>
-      ) : (
-        applications.map(app => (
-          <div key={app.rentalApplicationID} className="application-card">
-            <div className="application-info">
-              <h3>{app?.property?.propertyName} - Property id {app.propertyID}</h3>
-              <p><strong>Address:</strong> {app.property?.address || app.permanentAddress}</p>
-              <p><strong>Start Date:</strong> {app.tentativeStartDate?.split('T')[0]}</p>
-            </div>
- 
-            <div className={`application-status ${getStatusClass(app.status)}`}>
-              {app.status}
-            </div>
- 
-            {['accepted', 'approved'].includes(app.status?.toLowerCase()) && (
-              <div className="lease-button-container">
-                <Link
-                  to={`/tenant/lease-agreement/${app.rentalApplicationID}`}
-                  className="lease-btn"
-                >
-                  Proceed to Lease Agreement
-                </Link>
-              </div>
+
+    const getStatusClass = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'pending':
+                return 'status-pending';
+            case 'approved':
+            case 'accepted':
+                return 'status-approved';
+            case 'rejected':
+            case 'declined':
+                return 'status-rejected';
+            default:
+                return 'status-unknown';
+        }
+    };
+
+    const handleDelete = async (applicationId) => {
+        if (window.confirm('Are you sure you want to delete this application?')) {
+            try {
+                const token = localStorage.getItem('tenantToken');
+                await axios.delete(`http://localhost:5162/api/RentalApplication/${applicationId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+                // Remove the deleted application from the state
+                setApplications(applications.filter(app => app.rentalApplicationID !== applicationId));
+            } catch (error) {
+                console.error('Error deleting application:', error);
+                setError('Failed to delete application.');
+            }
+        }
+    };
+
+    return (
+        <div className="tenant-applications">
+            <h2>My Rental Applications</h2>
+
+            {loading ? (
+                <div className="loading">
+                    <FaSpinner className="spinner" /> Loading applications...
+                </div>
+            ) : error ? (
+                <div className="error-message">
+                    <FaExclamationCircle /> {error}
+                </div>
+            ) : applications.length === 0 ? (
+                <p>No applications submitted yet.</p>
+            ) : (
+                applications.map(app => (
+                    <div key={app.rentalApplicationID} className="application-card">
+                        
+                        <div className="application-details">
+                            <h3>Application for {app.propertyName || app.property?.propertyName} </h3>
+                            <p><strong>Status:</strong> <span className={`application-status ${getStatusClass(app.status)}`}>{app.status}</span></p>
+                            
+                           
+                            <p><strong>Number of People:</strong> {app.noOfPeople}</p>
+                            <p><strong>Preferred Stay Period:</strong> {app.stayPeriod}</p>
+                            <p><strong>Tentative Start Date:</strong> {app.tentativeStartDate?.split('T')[0]}</p>
+                            <p><strong>Permanent Address:</strong> {app.permanentAddress}</p>
+                            <p><strong>State:</strong> {app.state}</p>
+                            <p><strong>Country:</strong> {app.country}</p>
+                            <p><strong>Specific Requirements:</strong> {app.specificRequirements || 'N/A'}</p>
+                            {/* Add other fields you want to display */}
+                        </div>
+
+                        <div className="application-actions">
+                            {app.status?.toLowerCase() === 'pending' && (
+                                <Link to={`/tenant/applications/edit/${app.rentalApplicationID}`} className="edit-btn">
+                                    Edit Application
+                                </Link>
+                            )}
+                            {app.status?.toLowerCase() !== 'approved' && (
+                                <button onClick={() => handleDelete(app.rentalApplicationID)} className="delete-btn">
+                                    Delete Application
+                                </button>
+                            )}
+                        </div>
+
+                        {['accepted', 'approved'].includes(app.status?.toLowerCase()) &&
+                            !leaseAgreementsSubmittedForProperty[app.propertyID] && (
+                                <div className="lease-button-container">
+                                    <Link
+                                        to={`/tenant/lease-agreement/${app.rentalApplicationID}`}
+                                        className="lease-btn"
+                                    >
+                                        Proceed to Lease Agreement
+                                    </Link>
+                                </div>
+                            )}
+
+                        {['accepted', 'approved'].includes(app.status?.toLowerCase()) &&
+                            leaseAgreementsSubmittedForProperty[app.propertyID] && (
+                                <div className="lease-submitted-message">
+                                    Lease Agreement Submitted for this Property
+                                </div>
+                            )}
+                    </div>
+                ))
             )}
-          </div>
-        ))
-      )}
-    </div>
-  );
+        </div>
+    );
 }
- 
+
 export default MyApplications;

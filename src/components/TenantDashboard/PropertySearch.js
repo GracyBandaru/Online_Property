@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import PropertyCard from '../shared/PropertyCard';
 import './TenantDashboard.css';
+import { useAppliedProperties } from './TenantLayout'; // Import the context
  
 function PropertySearch() {
     const navigate = useNavigate();
@@ -11,10 +12,11 @@ function PropertySearch() {
     const [error, setError] = useState(null);
     const [searchParams, setSearchParams] = useState({
         propertyName: '',
-        state: '',
-        country: ''
+        // state: '',
+        // country: ''
     });
     const [filteredProperties, setFilteredProperties] = useState([]);
+    const appliedPropertyIds = useAppliedProperties(); // Access appliedPropertyIds from context
  
     useEffect(() => {
         const fetchAllProperties = async () => {
@@ -55,58 +57,39 @@ function PropertySearch() {
     };
  
     const handleSearch = async (e) => {
- 
         e.preventDefault();
-     
+ 
         const { propertyName } = searchParams;
-       
+ 
         if (!propertyName.trim()) {
-     
-          // If empty, reset to all properties
-     
-          setFilteredProperties(properties);
-     
-          return;
-     
+            // If empty, reset to all properties
+            setFilteredProperties(properties);
+            return;
         }
-       
+ 
         try {
-     
-          const token = localStorage.getItem('tenantToken');
-     
-          const response = await axios.get(`http://localhost:5162/api/property/search/${propertyName}`, {
-     
-            headers: {
-     
-              Authorization: `Bearer ${token}`,
-     
-            },
-     
-          });
-       
-          const data = response.data?.$values || response.data || [];
-     
-          setFilteredProperties(data);
-     
+            const token = localStorage.getItem('tenantToken');
+            const response = await axios.get(`http://localhost:5162/api/property/search/${propertyName}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const data = response.data?.$values || response.data || [];
+            setFilteredProperties(data);
         } catch (error) {
-     
-          console.error("Error searching properties:", error);
-     
-          setFilteredProperties([]);
-     
+            console.error("Error searching properties:", error);
+            setFilteredProperties([]);
         }
-     
-      };
-     
-       
- 
-    const handleApplyNow = (propertyId) => {
-        navigate(`/tenant/apply/${propertyId}`);
     };
  
-    const goToGeneralApplication = () => {
-        navigate('/tenant/apply');
+ 
+    const handleApplyNow = (property) => {
+        navigate(`/tenant/apply/${property.propertyID}`);
     };
+ 
+    // const goToGeneralApplication = () => {
+    //     navigate('/tenant/apply');
+    // };
  
     if (loading) {
         return <div>Loading properties...</div>;
@@ -118,26 +101,20 @@ function PropertySearch() {
  
     return (
         <div className="property-list-tenant-container">
-            <div className="apply-now-button-top-right">
+            {/* <div className="apply-now-button-top-right">
                 <button onClick={goToGeneralApplication}>Apply for Rent</button>
-            </div>
+            </div> */}
             <h2>Available Properties</h2>
             <br/>
  
             <div className='search-bar-wrapper'>
             <form className="search-bar" onSubmit={handleSearch}>
                 <input
- 
                     type="text"
- 
                     name="propertyName"
- 
                     placeholder="Search by Property Name"
- 
                     value={searchParams.propertyName}
- 
                     onChange={handleInputChange}
- 
                 />
                 <button type="submit">Search</button>
             </form>
@@ -152,6 +129,7 @@ function PropertySearch() {
                         showApplyButton={true}
                         onApplyNow={handleApplyNow}
                         isTenantView={true}
+                        appliedPropertyIds={appliedPropertyIds} // Pass the applied IDs
                     />
                 ))}
             </div>

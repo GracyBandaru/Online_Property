@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Remove useParams
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import './RentalApplicationForm.css'; // Import CSS for styling
  
 function RentalApplicationForm() {
     const navigate = useNavigate();
+    const location = useLocation();
+    console.log("Location State in RentalApplicationForm:", location.state);
+    const property = location.state?.property;
     const [applicationData, setApplicationData] = useState({
-        propertyId: '', // Will be manually entered
-        ownerId: '',   // Will be manually entered
+        propertyId: property?.propertyID || '', // Use propertyID from the API response
+        ownerId: property?.ownerID || '',     // Use ownerID from the API response
         noOfPeople: '',
         stayPeriod: '',
         tentativeStartDate: '',
@@ -16,7 +19,7 @@ function RentalApplicationForm() {
         specificRequirements: '',
         status: 'Pending', // Add the Status field with a default value
     });
-
+ 
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
  
@@ -71,6 +74,7 @@ function RentalApplicationForm() {
                         value={applicationData.propertyId}
                         onChange={handleChange}
                         required
+                        readOnly={!!property?.propertyID} // Use propertyID
                     />
                 </div>
                 <div className="form-group">
@@ -82,8 +86,10 @@ function RentalApplicationForm() {
                         value={applicationData.ownerId}
                         onChange={handleChange}
                         required
+                        readOnly={!!property?.ownerID} // Use ownerID
                     />
                 </div>
+                {/* ... other form fields ... */}
                 <div className="form-group">
                     <label htmlFor="noOfPeople">Number of People:</label>
                     <input
@@ -172,5 +178,3 @@ function RentalApplicationForm() {
 }
  
 export default RentalApplicationForm;
- 
- 
