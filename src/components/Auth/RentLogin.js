@@ -1,81 +1,100 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaUser, FaLock, FaHome, FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
+import {jwtDecode} from 'jwt-decode'; // Import the jwt-decode library
 import './Auth.css';
-
+ 
 const RentLogin = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await axios.post('http://localhost:5162/api/Tenant/login', {
-        email,
-        password
-      });
-
-      if (response.data.token) {
-        localStorage.setItem('tenantToken', response.data.token);
-        navigate('/tenant'); // Updated route
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || err.response?.data || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="auth-page" style={{ backgroundImage: "url('/assets/auth-bg.jpg')" }}>
-      <div className="auth-container">
-        <div className="auth-header">
-          <FaHome className="auth-icon" />
-          <h2>Tenant Login</h2>
-          <p>Access your rental account</p>
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+ 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+ 
+        try {
+            const response = await axios.post('http://localhost:5162/api/Tenant/login', {
+                email,
+                password
+            });
+ 
+            if (response.data.token) {
+                const token = response.data.token;
+                localStorage.setItem('tenantToken', token);
+ 
+                // Decode the JWT token to get the tenant ID
+                try {
+                    const decodedToken = jwtDecode(token);
+                    // Assuming the tenant ID is under the claim 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'
+                    const tenantId = decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+                    if (tenantId) {
+                        localStorage.setItem('tenantId', tenantId);
+                        console.log("Tenant ID stored:", tenantId);
+                        navigate('/tenant'); // Updated route
+                    } else {
+                        setError('Tenant ID not found in token.');
+                    }
+                } catch (decodeError) {
+                    console.error('Error decoding token:', decodeError);
+                    setError('Failed to decode token.');
+                }
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || err.response?.data || 'Login failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+ 
+    return (
+        <div className="auth-page" style={{ backgroundImage: "url('/assets/auth-bg.jpg')" }}>
+            <div className="auth-container">
+                <div className="auth-header">
+                    <FaHome className="auth-icon" />
+                    <h2>Tenant Login</h2>
+                    <p>Access your rental account</p>
+                </div>
+ 
+                {error && <div className="auth-error">{error}</div>}
+ 
+                <form onSubmit={handleSubmit}>
+                    <div className="input-group">
+                        <FaUser />
+                        <input
+                            type="email"
+                            placeholder="Email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                    </div>
+                    <div className="input-group">
+                        <FaLock />
+                        <input
+                            type="password"
+                            placeholder="Password"
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </div>
+                    <button type="submit" className="auth-btn" disabled={loading}>
+                        {loading ? <FaSpinner className="spinner" /> : 'Login'}
+                    </button>
+                </form>
+                <div className="auth-footer">
+                    <p>Don't have an account? <Link to="/rent-register">Register here</Link></p>
+                    <Link to="/" className="auth-home-link">Back to Home</Link>
+                </div>
+            </div>
         </div>
-        
-        {error && <div className="auth-error">{error}</div>}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <FaUser />
-            <input 
-              type="email" 
-              placeholder="Email" 
-              required 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="input-group">
-            <FaLock />
-            <input 
-              type="password" 
-              placeholder="Password" 
-              required 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? <FaSpinner className="spinner" /> : 'Login'}
-          </button>
-        </form>
-        <div className="auth-footer">
-          <p>Don't have an account? <Link to="/rent-register">Register here</Link></p>
-          <Link to="/" className="auth-home-link">Back to Home</Link>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
-
+ 
 export default RentLogin;
+ 

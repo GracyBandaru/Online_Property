@@ -5,9 +5,9 @@ import Hero from './components/Hero/Hero';
 import Contact from './components/Contact/Contact';
 import About from './components/About/About';
 import AboutLayout from './components/About/AboutLayout';
-import Testimonials from './components/Testimonials/Testimonials';
+
 import Team from './components/Team/Team';
-import Press from './components/Press/Press';
+
 import ScrollToTop from './components/ScrollToTop';
 import NotFound from './components/NotFound/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -61,7 +61,6 @@ function App() {
                     <Route element={<MainLayout />}>
                         <Route path="/" element={<Hero />} />
                         <Route path="/contact" element={<Contact />} />
-                        <Route path="/reviews" element={<Testimonials />} />
 
                         {/* Authentication Routes */}
                         <Route path="/rent-login" element={<RentLogin />} />
@@ -74,7 +73,7 @@ function App() {
                         <Route path="/about" element={<AboutLayout />}>
                             <Route index element={<About />} />
                             <Route path="team" element={<Team />} />
-                            <Route path="press" element={<Press />} />
+                           
                         </Route>
                     </Route>
 

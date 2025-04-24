@@ -24,10 +24,10 @@ const Header = () => {
         <NavLink to="/rent-login"><FaKey /> Rent</NavLink>
         <NavLink to="/sell-login"><FaHandshake /> Sell</NavLink>
         <NavLink to="/contact"><FaEnvelope /> Contact</NavLink>
-        <NavLink to="/reviews"><FaStar /> Reviews</NavLink>
+        
         <NavLink to="/about" end><FaInfoCircle /> About</NavLink>
         <NavLink to="/about/team"><FaUsers /> Team</NavLink> {/* Added icon here */}
-        <NavLink to="/about/press"><FaNewspaper /> Press</NavLink>
+        
       </nav>
     </header>
   );

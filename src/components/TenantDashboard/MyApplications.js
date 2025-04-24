@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './RentalApplicationForm.css'; // Using the same CSS file
+import './RentalApplicationForm.css';
 import { FaSpinner, FaExclamationCircle } from 'react-icons/fa';
-
+ 
 function MyApplications() {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [leaseAgreementsSubmittedForProperty, setLeaseAgreementsSubmittedForProperty] = useState({});
     const navigate = useNavigate();
-
+    const tenantId = localStorage.getItem('tenantId');
+ 
     useEffect(() => {
         const fetchApplications = async () => {
             const token = localStorage.getItem('tenantToken');
@@ -27,7 +28,7 @@ function MyApplications() {
                 });
                 const responseData = response.data;
                 const allApplications = [];
-
+ 
                 if (responseData?.$values && responseData.$values.length > 0) {
                     for (const item of responseData.$values) {
                         if (item?.rentalApplicationID) {
@@ -40,7 +41,7 @@ function MyApplications() {
                             const propertyName = item.property.propertyName;
                             for (const nestedApp of item.property.rentalApplications.$values) {
                                 if (nestedApp?.rentalApplicationID) {
-                                    allApplications.push({ ...nestedApp, propertyName: propertyName, propertyID: item.propertyID, propertyImageUrl: item.property?.propertyImageUrl, ...nestedApp }); // Assuming propertyImageUrl is here
+                                    allApplications.push({ ...nestedApp, propertyName: propertyName, propertyID: item.propertyID, propertyImageUrl: item.property?.propertyImageUrl });
                                     if (['accepted', 'approved'].includes(nestedApp.status?.toLowerCase()) && item.propertyID) {
                                         await checkIfLeaseExists(item.propertyID);
                                     }
@@ -48,11 +49,11 @@ function MyApplications() {
                                 console.log("Nested Application:", nestedApp);
                             }
                         } else if (item?.property) {
-                            allApplications.push({ ...item, propertyImageUrl: item.property.propertyImageUrl }); // Assuming propertyImageUrl is directly in property
+                            allApplications.push({ ...item, propertyImageUrl: item.property.propertyImageUrl, propertyID: item.propertyID });
                         }
                     }
                 }
-
+ 
                 setApplications(allApplications);
                 console.log("All Applications:", allApplications);
             } catch (err) {
@@ -62,10 +63,10 @@ function MyApplications() {
                 setLoading(false);
             }
         };
-
+ 
         fetchApplications();
     }, []);
-
+ 
     const checkIfLeaseExists = async (propertyId) => {
         try {
             const response = await axios.get(`http://localhost:5162/api/LeaseAgreement/property/${propertyId}/tenant/lease-exists`, {
@@ -81,7 +82,7 @@ function MyApplications() {
             console.error('Error checking lease agreement:', error);
         }
     };
-
+ 
     const getStatusClass = (status) => {
         switch (status?.toLowerCase()) {
             case 'pending':
@@ -96,7 +97,7 @@ function MyApplications() {
                 return 'status-unknown';
         }
     };
-
+ 
     const handleDelete = async (applicationId) => {
         if (window.confirm('Are you sure you want to delete this application?')) {
             try {
@@ -106,7 +107,6 @@ function MyApplications() {
                         'Authorization': `Bearer ${token}`,
                     },
                 });
-                // Remove the deleted application from the state
                 setApplications(applications.filter(app => app.rentalApplicationID !== applicationId));
             } catch (error) {
                 console.error('Error deleting application:', error);
@@ -114,11 +114,11 @@ function MyApplications() {
             }
         }
     };
-
+ 
     return (
         <div className="tenant-applications">
             <h2>My Rental Applications</h2>
-
+ 
             {loading ? (
                 <div className="loading">
                     <FaSpinner className="spinner" /> Loading applications...
@@ -132,12 +132,14 @@ function MyApplications() {
             ) : (
                 applications.map(app => (
                     <div key={app.rentalApplicationID} className="application-card">
-                        
+                        {app.propertyImageUrl && (
+                            <div className="property-image-container">
+                                <img src={app.propertyImageUrl} alt={app.propertyName || app.property?.propertyName} className="property-image" />
+                            </div>
+                        )}
                         <div className="application-details">
-                            <h3>Application for {app.propertyName || app.property?.propertyName} </h3>
+                            <h3>Application for {app.propertyName || app.property?.propertyName}</h3>
                             <p><strong>Status:</strong> <span className={`application-status ${getStatusClass(app.status)}`}>{app.status}</span></p>
-                            
-                           
                             <p><strong>Number of People:</strong> {app.noOfPeople}</p>
                             <p><strong>Preferred Stay Period:</strong> {app.stayPeriod}</p>
                             <p><strong>Tentative Start Date:</strong> {app.tentativeStartDate?.split('T')[0]}</p>
@@ -145,9 +147,8 @@ function MyApplications() {
                             <p><strong>State:</strong> {app.state}</p>
                             <p><strong>Country:</strong> {app.country}</p>
                             <p><strong>Specific Requirements:</strong> {app.specificRequirements || 'N/A'}</p>
-                            {/* Add other fields you want to display */}
                         </div>
-
+ 
                         <div className="application-actions">
                             {app.status?.toLowerCase() === 'pending' && (
                                 <Link to={`/tenant/applications/edit/${app.rentalApplicationID}`} className="edit-btn">
@@ -160,19 +161,21 @@ function MyApplications() {
                                 </button>
                             )}
                         </div>
-
+ 
                         {['accepted', 'approved'].includes(app.status?.toLowerCase()) &&
                             !leaseAgreementsSubmittedForProperty[app.propertyID] && (
                                 <div className="lease-button-container">
+                                    {/* IMMEDIATE CONSOLE LOG BEFORE THE LINK */}
+                                    {console.log("MyApplications - tenantId right before Link:", tenantId)}
                                     <Link
-                                        to={`/tenant/lease-agreement/${app.rentalApplicationID}`}
+                                        to={`/tenant/lease-agreement/${app.rentalApplicationID}?propertyId=${app.propertyID}&tenantId=${tenantId}`}
                                         className="lease-btn"
                                     >
                                         Proceed to Lease Agreement
                                     </Link>
                                 </div>
                             )}
-
+ 
                         {['accepted', 'approved'].includes(app.status?.toLowerCase()) &&
                             leaseAgreementsSubmittedForProperty[app.propertyID] && (
                                 <div className="lease-submitted-message">
@@ -185,5 +188,5 @@ function MyApplications() {
         </div>
     );
 }
-
+ 
 export default MyApplications;
