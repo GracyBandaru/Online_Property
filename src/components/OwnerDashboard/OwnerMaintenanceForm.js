@@ -103,8 +103,8 @@ const OwnerMaintenanceForm = () => {
           tenantRequests.map((request) => (
             <li key={request.requestID}>
               <p>Request ID: {request.requestID}</p>
-              <p>Tenant Name: {request.tenantName}</p>
-              <p>Tenant Contact No: {request.tenantContactNo}</p>
+              <p>Tenant Id: {request.tenantID}</p>
+              
               <p>Status: {request.status}</p>
               <p>Description: {request.issueDescription}</p>
             </li>

@@ -121,10 +121,18 @@ function RentalApplications() {
             </div>
             {app.status?.toLowerCase() === 'pending' && (
               <div className="action-buttons">
-                <button onClick={() => handleStatusUpdate(app.rentalApplicationID, 'Approved')}>
+                <button style={{
+            backgroundColor: '#28a745',
+            color: 'white',
+             }}
+                onClick={() => handleStatusUpdate(app.rentalApplicationID, 'Approved')}>
                   <FaCheckCircle /> Approve
                 </button>
-                <button onClick={() => handleStatusUpdate(app.rentalApplicationID, 'Rejected')}>
+                <button style={{
+            backgroundColor: '#dc3545',
+            color: 'white',
+                }}
+                onClick={() => handleStatusUpdate(app.rentalApplicationID, 'Rejected')}>
                   <FaTimesCircle /> Reject
                 </button>
               </div>
@@ -137,3 +145,4 @@ function RentalApplications() {
 }
  
 export default RentalApplications;
+ 
