@@ -21,6 +21,8 @@ import RentLogin from './components/Auth/RentLogin';
 import RentRegister from './components/Auth/RentRegister';
 import SellLogin from './components/Auth/SellLogin';
 import SellRegister from './components/Auth/SellRegister';
+import ForgotPasswordTenant from './components/Auth/ForgotPasswordTenant';
+ 
 
 // Owner Dashboard Components
 import OwnerLayout from './components/OwnerDashboard/OwnerLayout';
@@ -68,6 +70,7 @@ function App() {
                         <Route path="/sell-login" element={<SellLogin />} />
                         <Route path="/sell-register" element={<SellRegister />} />
                         <Route path="/sell-forgot-password" element={<ForgotPassword />} />
+                        <Route path="/rent-forgot-password" element={<ForgotPasswordTenant />} />
 
                         {/* About section nested routes */}
                         <Route path="/about" element={<AboutLayout />}>

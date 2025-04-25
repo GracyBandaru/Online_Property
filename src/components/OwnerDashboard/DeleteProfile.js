@@ -1,27 +1,52 @@
 import React from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './OwnerDashboard.css';
  
 function DeleteProfile() {
   const navigate = useNavigate();
  
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete your profile? This action cannot be undone.')) return;
+    toast.info(
+      ({ closeToast }) => (
+        <div>
+          <p>Are you sure you want to delete your profile?</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+            <button
+              onClick={async () => {
+                closeToast();
+                try {
+                  const token = localStorage.getItem('ownerToken');
+                  await axios.delete('http://localhost:5162/api/Owner/delete', {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
  
-    try {
-      const token = localStorage.getItem('ownerToken');
-      await axios.delete('http://localhost:5162/api/Owner/delete', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
- 
-      alert('Profile deleted successfully.');
-      localStorage.removeItem('ownerToken');
-      navigate('/sell-register');
-    } catch (err) {
-      console.error('❌ Failed to delete profile:', err);
-      alert('Failed to delete profile. Please try again.');
-    }
+                  toast.success('Profile deleted successfully!', {
+                    position: 'top-center',
+                    onClose: () => {
+                      localStorage.removeItem('ownerToken');
+                      navigate('/sell-register');
+                    }
+                  });
+                } catch (error) {
+                  toast.error('Failed to delete profile. Please try again.', {
+                    position: 'top-center'
+                  });
+                  console.error('Delete error:', error);
+                }
+              }}
+              className="btn btn-danger"
+            >
+              Yes
+            </button>
+            <button onClick={closeToast} className="btn btn-secondary">No</button>
+          </div>
+        </div>
+      ),
+      { position: 'top-center', autoClose: false }
+    );
   };
  
   return (
@@ -31,10 +56,9 @@ function DeleteProfile() {
       <button onClick={handleDelete} className="btn-danger">
         Delete My Profile
       </button>
+      <ToastContainer />
     </div>
   );
 }
  
 export default DeleteProfile;
- 
- 
